@@ -1,0 +1,32 @@
+# .gitignore
+
+# Hardhat files
+cache
+artifacts
+
+# Ignore environment variables
+.env
+
+# Ignore dependencies
+node_modules
+
+# Ignore coverage files
+coverage
+coverage.json
+
+# Ignore typechain files
+typechain
+typechain-types
+
+# Ignore IDE specific files
+.DS_Store
+*.log
+
+# Ignore test related files
+tmp
+
+# Ignore generated files
+.DS_Store
+
+# other
+MEMO.md
