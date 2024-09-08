@@ -17,7 +17,7 @@ This project is a decentralized application (DApp) that allows users to mint NFT
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/superpiccell-embryo-nft.git
+git clone git@github.com:dev-muhus/superpiccell-embryo-nft.git
 cd superpiccell-embryo-nft
 ```
 
@@ -46,22 +46,35 @@ NEXT_PUBLIC_HEADER_TEXT_COLOR=#ffffff
 
 #### `.env` (for backend configuration):
 ```bash
-RPC_URL=<your_backend_rpc_url>
-CONTRACT_ADDRESS=<your_backend_contract_address>
+PRIVATE_KEY=<your_private_key>
+NETWORK_URL=<your_backend_rpc_url>
+NETWORK_NAME=<your_network>
 ```
 
-You can use any RPC provider (Infura, Alchemy, or others) for the `NEXT_PUBLIC_CORE_RPC_URL`, `NEXT_PUBLIC_NFT_RPC_URL`, and `RPC_URL` variables.
+You can use any RPC provider (Infura, Alchemy, or others) for the `NEXT_PUBLIC_CORE_RPC_URL`, `NEXT_PUBLIC_NFT_RPC_URL`, and `NETWORK_URL` variables.
 
 ### 3. Build and Launch Docker Containers
 ```bash
 docker compose up -d
 ```
 
+
 ### 4. Install Dependencies Inside the Container
+
+For the backend:
+
 ```bash
 docker compose exec app bash
 npm ci
 ```
+
+For the frontend:
+
+```bash
+docker compose exec frontend bash
+npm ci
+```
+
 
 ### 5. Start the Application
 ```bash
@@ -143,3 +156,22 @@ npx hardhat test
 ```
 
 ## License
+
+This project is licensed under the Unlicense. For more details, see the [LICENSE](LICENSE) file.
+
+## Etherscan Contract Verification (Automated)
+
+This project supports automated contract verification on Etherscan. After deploying your contracts, you can easily verify them using the following command:
+
+### Verify Contracts
+```bash
+npx hardhat verify --network sepolia <DEPLOYED_CONTRACT_ADDRESS>
+```
+
+Before running this command, ensure your `.env` file is properly configured with your Etherscan API key:
+
+```bash
+ETHERSCAN_API_KEY=<your_etherscan_api_key>
+```
+
+By running the above command, the contract will be automatically verified and published on Etherscan, including all related source code and dependencies.
