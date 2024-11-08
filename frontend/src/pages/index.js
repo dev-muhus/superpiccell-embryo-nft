@@ -345,6 +345,7 @@ export default function Home() {
   return (
     <>
       <Head>
+        <link rel="icon" href="/favicon.ico" />
         <title>{process.env.NEXT_PUBLIC_SITE_TITLE}</title>
         <meta name="description" content={process.env.NEXT_PUBLIC_META_DESCRIPTION} />
       </Head>
