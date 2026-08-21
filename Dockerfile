@@ -1,5 +1,5 @@
 # Use the official Node.js image as a base. Choose a version that is compatible with package.json.
-FROM node:16
+FROM node:24
 
 # Create and set the /app directory as the working directory.
 WORKDIR /app

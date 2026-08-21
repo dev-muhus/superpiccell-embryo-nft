@@ -1,10 +1,4 @@
-FROM node:18-bullseye
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-  openssl \
-  xz-utils \
-  && rm -rf /var/lib/apt/lists/*
+FROM node:24-bookworm
 
 WORKDIR /frontend
 
