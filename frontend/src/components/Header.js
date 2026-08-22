@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, Typography, Box, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import Link from 'next/link';
-import { useWallet } from '../../contexts/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import HomeIcon from '@mui/icons-material/Home';
 import ListAltIcon from '@mui/icons-material/ListAlt';

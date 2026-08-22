@@ -3,8 +3,8 @@ import { Container, Box, CircularProgress, Typography, Grid, Card, CardContent, 
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { ethers } from 'ethers';
 import Head from 'next/head';
-import Footer from './components/Footer';
-import Header from './components/Header';
+import Footer from '../components/Footer';
+import Header from '../components/Header';
 import { useWallet } from '../contexts/WalletContext';
 import spenContractData from '../../public/SPEN.json';
 import coreContractData from '../../public/SuperPiccellCore.json';
@@ -12,9 +12,13 @@ import { fetchContents } from '../utils/fetchContents';
 
 const SPEN_ABI = spenContractData.abi;
 const CORE_ABI = coreContractData.abi;
+const ERC20_ABI = [
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+];
 
 export default function Home() {
-  const { userAccount, requestAccount, networkMismatch, checkNetwork, callContractMethod } = useWallet();
+  const { userAccount, requestAccount, disconnectAccount, networkMismatch, checkNetwork, callContractMethod } = useWallet();
   const [nftCount, setNftCount] = useState(0);
   const [shouldReconnect, setShouldReconnect] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -277,6 +281,12 @@ export default function Home() {
       return;
     }
 
+    if (!mintConfig) {
+      setMintStatus('Mint configuration is not available yet. Please reload the page and try again.');
+      setOpen(true);
+      return;
+    }
+
     setMintLoadingId(content.id);
 
     try {
@@ -299,7 +309,23 @@ export default function Home() {
       const signer = provider.getSigner();
       const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, signer);
 
-      const tx = await contract.mintNFT(userAccount, JSON.stringify(nftMetadata), content.id, { value: ethers.utils.parseEther(mintConfig.mintPrice) });
+      const mintPriceWei = ethers.utils.parseEther(mintConfig.mintPrice);
+      const usesPaymentToken = !mintConfig.isFreeMint && mintConfig.paymentTokenAddress !== ethers.constants.AddressZero;
+      const overrides = {};
+
+      if (usesPaymentToken) {
+        // The contract pulls the price with transferFrom, so it needs an allowance first.
+        const paymentToken = new ethers.Contract(mintConfig.paymentTokenAddress, ERC20_ABI, signer);
+        const allowance = await paymentToken.allowance(userAccount, nftContractAddress);
+        if (allowance.lt(mintPriceWei)) {
+          const approveTx = await paymentToken.approve(nftContractAddress, mintPriceWei);
+          await approveTx.wait();
+        }
+      } else if (!mintConfig.isFreeMint) {
+        overrides.value = mintPriceWei;
+      }
+
+      const tx = await contract.mintNFT(userAccount, JSON.stringify(nftMetadata), content.id, overrides);
       await tx.wait();
 
       setMintStatus('NFT successfully minted!');

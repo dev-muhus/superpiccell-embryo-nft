@@ -3,8 +3,8 @@ import { ethers } from 'ethers';
 import { Container, Grid, Card, CardContent, Typography, CircularProgress, Fab, Box, Link, ThemeProvider } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import spenContractData from '../../public/SPEN.json';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { useWallet } from '../contexts/WalletContext';
 import theme from '../styles/theme';
 
