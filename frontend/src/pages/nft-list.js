@@ -29,7 +29,7 @@ export default function NFTList() {
   };
   
   const fetchNFTs = async (userAddress) => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new ethers.BrowserProvider(window.ethereum);
     const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, provider);
   
     try {

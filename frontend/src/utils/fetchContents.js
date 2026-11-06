@@ -5,9 +5,9 @@ export async function fetchContents(contentType) {
     let provider;
 
     if (process.env.NEXT_PUBLIC_CORE_RPC_URL) {
-        provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_CORE_RPC_URL);
+        provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_CORE_RPC_URL);
     } else if (typeof window.ethereum !== 'undefined') {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
+        provider = new ethers.BrowserProvider(window.ethereum);
     } else {
         throw new Error('No provider available. Please connect a wallet.');
     }

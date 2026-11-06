@@ -32,9 +32,10 @@ export const WalletProvider = ({ children }) => {
         if (typeof window.ethereum !== 'undefined') {
             try {
                 const expectedChainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID, 10);
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const provider = new ethers.BrowserProvider(window.ethereum);
                 const network = await provider.getNetwork();
-                if (network.chainId !== expectedChainId) {
+                // ethers v6 reports chainId as a bigint.
+                if (Number(network.chainId) !== expectedChainId) {
                     try {
                         await window.ethereum.request({
                             method: 'wallet_switchEthereumChain',

@@ -17,7 +17,7 @@ async function main() {
   }
 
   const privateKey: string = process.env.PRIVATE_KEY ?? "";
-  const provider = new ethers.providers.JsonRpcProvider(process.env.NETWORK_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.NETWORK_URL);
   const signer = new ethers.Wallet(privateKey, provider);
 
   const spenContract = SPEN__factory.connect(contractAddress, signer);
@@ -37,7 +37,7 @@ async function main() {
       console.log(`Payment token set to ${paymentTokenAddress}`);
       break;
     case "setMintPrice":
-      const mintPrice = ethers.utils.parseEther(args[2]); // Expecting price in Ether
+      const mintPrice = ethers.parseEther(args[2]); // Expecting price in Ether
       await spenContract.setMintPrice(mintPrice);
       console.log(`Mint price set to ${args[2]} ETH`);
       break;
@@ -46,7 +46,7 @@ async function main() {
       console.log("Mint Configuration:");
       console.log({
         mintingEnabled: mintConfig.mintingEnabled,
-        mintPrice: ethers.utils.formatEther(mintConfig.mintPrice),
+        mintPrice: ethers.formatEther(mintConfig.mintPrice),
         paymentTokenAddress: mintConfig.paymentTokenAddress,
         isFreeMint: mintConfig.isFreeMint,
         paymentTokenSymbol: mintConfig.paymentTokenSymbol

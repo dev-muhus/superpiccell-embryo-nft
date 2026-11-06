@@ -9,6 +9,7 @@ import { useWallet } from '../contexts/WalletContext';
 import spenContractData from '../../public/SPEN.json';
 import coreContractData from '../../public/SuperPiccellCore.json';
 import { fetchContents } from '../utils/fetchContents';
+import { normalizeContentId } from '../utils/contentId';
 
 const SPEN_ABI = spenContractData.abi;
 const CORE_ABI = coreContractData.abi;
@@ -52,14 +53,14 @@ export default function Home() {
   useEffect(() => {
     if (userAccount) {
       const loadNftCount = async () => {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new ethers.BrowserProvider(window.ethereum);
         const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, provider);
         const count = await callContractMethod(contract, 'totalSupply');
         if (count === false) {
           console.error('Network mismatch or error occurred while loading NFT count. Please switch to the correct network.');
           return;
         }
-        setNftCount(count.toNumber());
+        setNftCount(Number(count));
       };
       loadNftCount();
     } else if (shouldReconnect) {
@@ -108,7 +109,7 @@ export default function Home() {
   // Fetch minting configuration from the contract
   const fetchMintConfiguration = async () => {
     if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, provider);
       const config = await callContractMethod(contract, 'getMintConfig');
       if (config === false) {
@@ -117,7 +118,7 @@ export default function Home() {
       }
       setMintConfig({
         mintingEnabled: config.mintingEnabled,
-        mintPrice: ethers.utils.formatEther(config.mintPrice),
+        mintPrice: ethers.formatEther(config.mintPrice),
         paymentTokenAddress: config.paymentTokenAddress,
         isFreeMint: config.isFreeMint,
         paymentTokenSymbol: config.paymentTokenSymbol,
@@ -128,7 +129,7 @@ export default function Home() {
   // Check if the contract is in protected mode
   const checkProtectionStatus = async () => {
     if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const coreContract = new ethers.Contract(coreContractAddress, CORE_ABI, provider);
       const protectedStatus = await coreContract.isContractProtected();
       setIsProtected(protectedStatus);
@@ -138,7 +139,7 @@ export default function Home() {
   // Check if a specific content is protected
   const checkContentProtectionStatus = async (contentId) => {
     if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const coreContract = new ethers.Contract(coreContractAddress, CORE_ABI, provider);
       try {
         const isContentProtected = await coreContract.isContentProtected(contentId.toString());
@@ -154,7 +155,7 @@ export default function Home() {
   // Fetch all minted content IDs
   const fetchMintedContents = async () => {
     if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum);
       const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, provider);
       const totalSupply = await callContractMethod(contract, 'totalSupply');
       if (totalSupply === false) {
@@ -169,7 +170,7 @@ export default function Home() {
             const tokenURI = await contract.tokenURI(i);
             const tokenData = JSON.parse(tokenURI);
             if (tokenData.contentId) {
-              mintedContentIds.add(ethers.BigNumber.from(tokenData.contentId).toString());
+              mintedContentIds.add(normalizeContentId(tokenData.contentId));
             }
           } catch (error) {
             console.error('Error fetching token URI:', error);
@@ -230,7 +231,7 @@ export default function Home() {
           }
         }
   
-        if (checkMintedContent && mintedContents.has(ethers.BigNumber.from(content.id).toString())) {
+        if (checkMintedContent && mintedContents.has(normalizeContentId(content.id))) {
           isDisabled = true;
         }
   
@@ -275,7 +276,7 @@ export default function Home() {
     }
 
     // Check if the content has already been minted
-    if (checkMintedContent && mintedContents.has(ethers.BigNumber.from(content.id).toString())) {
+    if (checkMintedContent && mintedContents.has(normalizeContentId(content.id))) {
       setMintStatus('This content has already been minted.');
       setOpen(true);
       return;
@@ -302,22 +303,23 @@ export default function Home() {
             trait_type: key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
             value: String(metadata[key] || ""),
           })),
-        contentId: content.id,
+        // A bigint cannot go through JSON.stringify, and this value is written on-chain.
+        contentId: content.id.toString(),
       };
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(nftContractAddress, SPEN_ABI, signer);
 
-      const mintPriceWei = ethers.utils.parseEther(mintConfig.mintPrice);
-      const usesPaymentToken = !mintConfig.isFreeMint && mintConfig.paymentTokenAddress !== ethers.constants.AddressZero;
+      const mintPriceWei = ethers.parseEther(mintConfig.mintPrice);
+      const usesPaymentToken = !mintConfig.isFreeMint && mintConfig.paymentTokenAddress !== ethers.ZeroAddress;
       const overrides = {};
 
       if (usesPaymentToken) {
         // The contract pulls the price with transferFrom, so it needs an allowance first.
         const paymentToken = new ethers.Contract(mintConfig.paymentTokenAddress, ERC20_ABI, signer);
         const allowance = await paymentToken.allowance(userAccount, nftContractAddress);
-        if (allowance.lt(mintPriceWei)) {
+        if (allowance < mintPriceWei) {
           const approveTx = await paymentToken.approve(nftContractAddress, mintPriceWei);
           await approveTx.wait();
         }
@@ -332,10 +334,12 @@ export default function Home() {
       setTransactionUrl(`https://${process.env.NEXT_PUBLIC_NETWORK_NAME}.etherscan.io/tx/${tx.hash}`);
       setOpen(true);
 
-      setMintedContents((prev) => new Set(prev).add(ethers.BigNumber.from(content.id).toString()));
+      setMintedContents((prev) => new Set(prev).add(normalizeContentId(content.id)));
 
       const count = await callContractMethod(contract, 'totalSupply');
-      setNftCount(count.toNumber());
+      if (count !== false) {
+        setNftCount(Number(count));
+      }
     } catch (error) {
       if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
         console.log('Transaction rejected by user.');
@@ -431,7 +435,7 @@ export default function Home() {
                               alignItems: 'center'
                             }}
                           >
-                            {mintLoadingId === content.id ? <CircularProgress size={24} /> : mintedContents.has(ethers.BigNumber.from(content.id).toString()) ? 'Already Minted' : 'Mint NFT'}
+                            {mintLoadingId === content.id ? <CircularProgress size={24} /> : mintedContents.has(normalizeContentId(content.id)) ? 'Already Minted' : 'Mint NFT'}
                           </Button>
                         </CardActions>
                       </Card>

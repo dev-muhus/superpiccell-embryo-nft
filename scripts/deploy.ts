@@ -12,7 +12,7 @@ async function main() {
         throw new Error('No value set for environment variable NETWORK_URL');
     }
 
-    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
     const signer = new ethers.Wallet(privateKey, provider);
 
     console.log("Deploying contracts with the account:", signer.address);
@@ -22,9 +22,9 @@ async function main() {
 
     const spen = await factory.deploy();
 
-    console.log("SPEN deployed to:", spen.address);
-    console.log(`Transaction URL: https://${process.env.NETWORK_NAME}.etherscan.io/tx/${spen.deployTransaction.hash}`);
-    await spen.deployed();
+    console.log("SPEN deployed to:", await spen.getAddress());
+    console.log(`Transaction URL: https://${process.env.NETWORK_NAME}.etherscan.io/tx/${spen.deploymentTransaction()?.hash}`);
+    await spen.waitForDeployment();
     console.log("Deploy completed");
 }
 
